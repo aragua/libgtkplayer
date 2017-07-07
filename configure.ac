@@ -93,8 +93,20 @@ AX_CHECK_COMPILE_FLAG([-std=gnu11],
 dnl ***********************************************************************
 dnl Check for required packages
 dnl ***********************************************************************
-PKG_CHECK_MODULES(LIBGTKPLAYER, [gio-2.0 >= 2.42])
+GST_REQS=1.4.0
+PKG_CHECK_MODULES(LIBGTKPLAYER,
+	[gio-2.0 >= 2.42
+	gtk+-3.0 >= 3.20
+	gstreamer-1.0 >= $GST_REQS
+	gstreamer-audio-1.0 >= $GST_REQS
+	gstreamer-video-1.0 >= $GST_REQS
+	gstreamer-base-1.0 >= $GST_REQS
+	gstreamer-plugins-base-1.0 >= $GST_REQS])
 
+PKG_CHECK_MODULES(GTKPLAYER,
+	[gio-2.0 >= 2.42
+	gtk+-3.0 >= 3.20
+	])
 
 dnl ***********************************************************************
 dnl Initialize Libtool
@@ -113,11 +125,8 @@ AC_CONFIG_FILES([
 
 	src/libgtkplayer-version.h
 
-
 	data/Makefile
 	data/libgtkplayer-$API_VERSION.pc:data/libgtkplayer.pc.in
-
-	po/Makefile.in
 ],[],
 [API_VERSION='$API_VERSION'])
 AC_OUTPUT

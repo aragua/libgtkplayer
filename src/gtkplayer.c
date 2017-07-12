@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 	gtk_widget_show_all(main_window);
 
         if (!dontstart)
-        player_start(&data,uri);
+        player_start(&data);
 
 	/* Start the GTK main loop. We will not regain control until gtk_main_quit is called. */
 	gtk_main();

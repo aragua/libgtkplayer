@@ -166,7 +166,7 @@ static void play_cb(GtkButton * button, PlayerData * data)
 	FUNC_ENTER;
 	if (data->initialized == 0) {
 		if (data->uri)
-			player_start(data, data->uri);
+			player_start(data);
 		else
             g_printerr ("URI unset.\n");
 	}
@@ -558,7 +558,7 @@ gint player_init(PlayerData * data)
 	return 0;
 }
 
-gint player_start(PlayerData * data, const char *uri)
+gint player_start(PlayerData * data)
 {
 	FUNC_ENTER;
 
@@ -568,9 +568,10 @@ gint player_start(PlayerData * data, const char *uri)
 
 	if (!data->uri) {
 		g_warning("data->uri is empty. Fix this case\n");
-		g_object_set(data->playbin, "uri", uri, NULL);
-	} else
-		g_object_set(data->playbin, "uri", data->uri, NULL);
+        return -1;
+    }
+
+    g_object_set(data->playbin, "uri", data->uri, NULL);
 
 	init_bus(data);
 
@@ -578,7 +579,7 @@ gint player_start(PlayerData * data, const char *uri)
 
 	data->initialized = 1;
 
-    	if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
+    if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
 	    GST_STATE_CHANGE_FAILURE) {
 		g_printerr
 		    ("Unable to set the pipeline to the playing state.\n");
@@ -600,8 +601,7 @@ void player_change_uri(PlayerData * data, const char *uri)
 				free(data->uri);
 			data->uri = strdup(uri);
 			if (data->initialized)
-				g_object_set(data->playbin, "uri", data->uri,
-					     NULL);
+			    g_object_set(data->playbin, "uri", data->uri, NULL);
 		}
 	}
 }

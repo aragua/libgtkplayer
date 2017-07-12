@@ -23,7 +23,7 @@ typedef struct _PlayerData {
 } PlayerData;
 
 gint player_init(PlayerData * data);
-gint player_start(PlayerData * data, const char *uri);
+gint player_start(PlayerData * data);
 void player_change_uri(PlayerData * data, const char *uri);
 void player_stop(PlayerData * data);
 void player_free(PlayerData * data);

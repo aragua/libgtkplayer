@@ -168,9 +168,7 @@ static void play_cb(GtkButton * button, PlayerData * data)
 		if (data->uri)
 			player_start(data, data->uri);
 		else
-			player_start(data,
-				     "file:///home/aragua/Downloads/sintel_trailer-480p.webm");
-		//player_start(data, "https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm");
+            g_printerr ("URI unset.\n");
 	}
 
 	if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
@@ -579,6 +577,13 @@ gint player_start(PlayerData * data, const char *uri)
 	g_timeout_add_seconds(1, (GSourceFunc) refresh_ui, data);
 
 	data->initialized = 1;
+
+    	if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
+	    GST_STATE_CHANGE_FAILURE) {
+		g_printerr
+		    ("Unable to set the pipeline to the playing state.\n");
+		gst_object_unref(data->playbin);
+	}
 
 	return 0;
 }

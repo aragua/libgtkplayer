@@ -23,8 +23,6 @@ int debug = 1;
 #define DBG(msg) if (debug){printf("[%s:%d] %s - %s\n", __FILE__, __LINE__, __func__, msg);}
 #define FUNC_ENTER if (verbose){printf("%s\n", __func__);}
 
-static gint __player_start(PlayerData * data);
-
 /* Common function */
 
 static guintptr get_window_handle(GtkWidget * widget)
@@ -159,30 +157,27 @@ static void realize_cb(GtkWidget * widget, PlayerData * data)
 {
 	FUNC_ENTER;
 	if (data)
+    {
 		data->window_handle = get_window_handle(widget);
+        if (data->window_handle)
+	    	gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(data->playbin),
+                    						    data->window_handle);
+    }
 }
 
 /* This function is called when the PLAY button is clicked */
 static void play_pause_cb(GtkButton * button, PlayerData * data)
 {
+    gint ret;
 	FUNC_ENTER;
 
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
+	if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
 		/* If button is active, action is to pause */
-		gst_element_set_state(data->playbin, GST_STATE_PAUSED);
+		ret = gst_element_set_state(data->playbin, GST_STATE_PAUSED);
 	} else {
-		/* If button is inactive, action is to play */
-		if (data->initialized == 0) {
-			if (data->uri)
-				__player_start(data);
-			else
-				g_printerr("URI unset.\n");
-		}
-
-		if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
-		    GST_STATE_CHANGE_FAILURE) {
-			g_printerr
-			    ("Unable to set the pipeline to the playing state.\n");
+		ret = gst_element_set_state(data->playbin, GST_STATE_PLAYING);
+        if (ret == GST_STATE_CHANGE_FAILURE) {
+			g_printerr ("Unable to set the pipeline to the playing state.\n");
 			gst_object_unref(data->playbin);
 		}
 	}
@@ -545,7 +540,7 @@ static void init_bus(PlayerData * data)
 	}
 }
 
-gint player_init(PlayerData * data)
+gint player_new(PlayerData * data)
 {
 	FUNC_ENTER;
 	if (!data)
@@ -562,65 +557,41 @@ gint player_init(PlayerData * data)
 
 	create_playbin(data);
 
-	return 0;
-}
-
-static gint __player_start(PlayerData * data)
-{
-	FUNC_ENTER;
-
-	if (data->window_handle)
-		gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY
-						    (data->playbin),
-						    data->window_handle);
-
-	if (!data->uri) {
-		g_warning("data->uri is empty. Fix this case\n");
-		return -1;
-	}
-
-	g_object_set(data->playbin, "uri", data->uri, NULL);
-
-	init_bus(data);
+    init_bus(data);
 
 	g_timeout_add_seconds(1, (GSourceFunc) refresh_ui, data);
 
-	data->initialized = 1;
+	return 0;
+}
 
-	if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
-	    GST_STATE_CHANGE_FAILURE) {
-		g_printerr
-		    ("Unable to set the pipeline to the playing state.\n");
-		gst_object_unref(data->playbin);
-	}
+gint player_start(PlayerData * data)
+{
+    gboolean active;
+	FUNC_ENTER;
+
+    if (!data || !data->uri)
+        return -EINVAL;
+
+    active = !gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(data->play_button));
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data->play_button), active);
 
 	return 0;
 }
 
-
-gint player_start(PlayerData * data)
+gint player_set_uri(PlayerData * data, const char *uri)
 {
 	FUNC_ENTER;
 
-    return __player_start(data);
-}
+    if (!data || !uri)
+            return -EINVAL;
 
-void player_change_uri(PlayerData * data, const char *uri)
-{
-	FUNC_ENTER;
-	if (data) {
-		if (data->initialized)
-			gst_element_set_state(data->playbin, GST_STATE_READY);
-		data->duration = GST_CLOCK_TIME_NONE;
-		if (uri) {
-			if (data->uri)
-				free(data->uri);
-			data->uri = strdup(uri);
-			if (data->initialized)
-				g_object_set(data->playbin, "uri", data->uri,
-					     NULL);
-		}
-	}
+	gst_element_set_state(data->playbin, GST_STATE_READY);
+	data->duration = GST_CLOCK_TIME_NONE;
+	if (data->uri)
+		free(data->uri);
+	data->uri = strdup(uri);
+	g_object_set(data->playbin, "uri", data->uri, NULL);
+    return 0;
 }
 
 void player_stop(PlayerData * data)
@@ -635,4 +606,6 @@ void player_free(PlayerData * data)
 	/* Free resources */
 	gst_element_set_state(data->playbin, GST_STATE_NULL);
 	gst_object_unref(data->playbin);
+    if (data->uri)
+		free(data->uri);
 }

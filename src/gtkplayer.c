@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
 
 	main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-	player_init(&data);
+   	player_new(&data);
 
-    player_change_uri(&data, uri);
+    player_set_uri(&data, uri);
 
 	g_signal_connect(G_OBJECT(main_window), "delete-event",
 			 G_CALLBACK(delete_event_cb), &data);

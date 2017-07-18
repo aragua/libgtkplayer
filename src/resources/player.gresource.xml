@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- icons from https://materialdesignicons.com/ -->
+<gresources>
+  <gresource prefix="/org/aragua/player">
+    <file >arrow-expand-all.png</file>
+    <file >play-pause.png</file>
+    <file >stop.png</file>
+  </gresource>
+</gresources>

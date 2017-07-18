@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	gtk_window_set_default_size(GTK_WINDOW(main_window), 640, 480);
 	gtk_widget_show_all(main_window);
 
-        if (!dontstart)
+    if (!dontstart)
         player_start(&data);
 
 	/* Start the GTK main loop. We will not regain control until gtk_main_quit is called. */

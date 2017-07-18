@@ -19,6 +19,7 @@ typedef struct _PlayerData {
 	GstState state;		/* Current state of the pipeline */
 	gboolean isfullscreen;
 	GtkWidget *fullscreen_window;
+	GtkWidget *play_button;
 	GtkWidget *fullscreen_button;
 } PlayerData;
 

@@ -23,6 +23,8 @@ int debug = 1;
 #define DBG(msg) if (debug){printf("[%s:%d] %s - %s\n", __FILE__, __LINE__, __func__, msg);}
 #define FUNC_ENTER if (verbose){printf("%s\n", __func__);}
 
+static gint __player_start(PlayerData * data);
+
 /* Common function */
 
 static guintptr get_window_handle(GtkWidget * widget)
@@ -161,29 +163,29 @@ static void realize_cb(GtkWidget * widget, PlayerData * data)
 }
 
 /* This function is called when the PLAY button is clicked */
-static void play_cb(GtkButton * button, PlayerData * data)
+static void play_pause_cb(GtkButton * button, PlayerData * data)
 {
 	FUNC_ENTER;
-	if (data->initialized == 0) {
-		if (data->uri)
-			player_start(data);
-		else
-            g_printerr ("URI unset.\n");
-	}
 
-	if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
-	    GST_STATE_CHANGE_FAILURE) {
-		g_printerr
-		    ("Unable to set the pipeline to the playing state.\n");
-		gst_object_unref(data->playbin);
-	}
-}
+	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
+		/* If button is active, action is to pause */
+		gst_element_set_state(data->playbin, GST_STATE_PAUSED);
+	} else {
+		/* If button is inactive, action is to play */
+		if (data->initialized == 0) {
+			if (data->uri)
+				__player_start(data);
+			else
+				g_printerr("URI unset.\n");
+		}
 
-/* This function is called when the PAUSE button is clicked */
-static void pause_cb(GtkButton * button, PlayerData * data)
-{
-	FUNC_ENTER;
-	gst_element_set_state(data->playbin, GST_STATE_PAUSED);
+		if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
+		    GST_STATE_CHANGE_FAILURE) {
+			g_printerr
+			    ("Unable to set the pipeline to the playing state.\n");
+			gst_object_unref(data->playbin);
+		}
+	}
 }
 
 /* This function is called when the STOP button is clicked */
@@ -209,7 +211,8 @@ static void create_ui(PlayerData * data)
 {
 	GtkWidget *main_hbox;	/* HBox to hold the video_window and the stream info text widget */
 	GtkWidget *controls, *sliderbox;	/* HBox to hold the buttons and the slider */
-	GtkWidget *play_button, *pause_button, *stop_button;	/* Buttons */
+	GtkWidget *stop_button;	/* Buttons */
+	GtkWidget *fs_img, *play_img, *stop_img;
 
 	FUNC_ENTER;
 
@@ -220,23 +223,26 @@ static void create_ui(PlayerData * data)
 	g_signal_connect(data->video_window, "draw", G_CALLBACK(draw_cb), data);
 
 	LOG("create button play");
-	play_button = gtk_button_new_with_label("Play");
-	g_signal_connect(G_OBJECT(play_button), "clicked", G_CALLBACK(play_cb),
+	data->play_button = gtk_toggle_button_new();
+	play_img =
+	    gtk_image_new_from_resource("/org/aragua/player/play-pause.png");
+	gtk_button_set_image(GTK_BUTTON(data->play_button), play_img);
+	g_signal_connect(G_OBJECT(data->play_button), "clicked", G_CALLBACK(play_pause_cb),
 			 data);
 
-	LOG("create button pause");
-	pause_button = gtk_button_new_with_label("Pause");
-	g_signal_connect(G_OBJECT(pause_button), "clicked",
-			 G_CALLBACK(pause_cb), data);
-
 	LOG("create stop button");
-	stop_button = gtk_button_new_with_label("Stop");
+	stop_button = gtk_button_new();
+	stop_img = gtk_image_new_from_resource("/org/aragua/player/stop.png");
+	gtk_button_set_image(GTK_BUTTON(stop_button), stop_img);
 	g_signal_connect(G_OBJECT(stop_button), "clicked", G_CALLBACK(stop_cb),
 			 data);
 
 	LOG("create fullscreen button");
-	data->fullscreen_button =
-	    gtk_toggle_button_new_with_label("view-fullscreen");
+	data->fullscreen_button = gtk_toggle_button_new();
+	fs_img =
+	    gtk_image_new_from_resource
+	    ("/org/aragua/player/arrow-expand-all.png");
+	gtk_button_set_image(GTK_BUTTON(data->fullscreen_button), fs_img);
 	g_signal_connect(G_OBJECT(data->fullscreen_button), "clicked",
 			 G_CALLBACK(fullscreen_cb), data);
 
@@ -254,8 +260,7 @@ static void create_ui(PlayerData * data)
 
 	LOG("Add controls");
 	controls = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	gtk_box_pack_start(GTK_BOX(controls), play_button, FALSE, FALSE, 2);
-	gtk_box_pack_start(GTK_BOX(controls), pause_button, FALSE, FALSE, 2);
+	gtk_box_pack_start(GTK_BOX(controls), data->play_button, FALSE, FALSE, 2);
 	gtk_box_pack_start(GTK_BOX(controls), stop_button, FALSE, FALSE, 2);
 	gtk_box_pack_start(GTK_BOX(controls), data->fullscreen_button, FALSE,
 			   FALSE, 2);
@@ -555,23 +560,26 @@ gint player_init(PlayerData * data)
 
 	create_ui(data);
 
+	create_playbin(data);
+
 	return 0;
 }
 
-gint player_start(PlayerData * data)
+static gint __player_start(PlayerData * data)
 {
 	FUNC_ENTER;
 
-	create_playbin(data);
-	gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(data->playbin),
-					    data->window_handle);
+	if (data->window_handle)
+		gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY
+						    (data->playbin),
+						    data->window_handle);
 
 	if (!data->uri) {
 		g_warning("data->uri is empty. Fix this case\n");
-        return -1;
-    }
+		return -1;
+	}
 
-    g_object_set(data->playbin, "uri", data->uri, NULL);
+	g_object_set(data->playbin, "uri", data->uri, NULL);
 
 	init_bus(data);
 
@@ -579,7 +587,7 @@ gint player_start(PlayerData * data)
 
 	data->initialized = 1;
 
-    if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
+	if (gst_element_set_state(data->playbin, GST_STATE_PLAYING) ==
 	    GST_STATE_CHANGE_FAILURE) {
 		g_printerr
 		    ("Unable to set the pipeline to the playing state.\n");
@@ -587,6 +595,14 @@ gint player_start(PlayerData * data)
 	}
 
 	return 0;
+}
+
+
+gint player_start(PlayerData * data)
+{
+	FUNC_ENTER;
+
+    return __player_start(data);
 }
 
 void player_change_uri(PlayerData * data, const char *uri)
@@ -601,7 +617,8 @@ void player_change_uri(PlayerData * data, const char *uri)
 				free(data->uri);
 			data->uri = strdup(uri);
 			if (data->initialized)
-			    g_object_set(data->playbin, "uri", data->uri, NULL);
+				g_object_set(data->playbin, "uri", data->uri,
+					     NULL);
 		}
 	}
 }

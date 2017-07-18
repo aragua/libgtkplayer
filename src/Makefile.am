@@ -4,6 +4,7 @@ liblibgtkplayer_@API_VERSION@_la_SOURCES = \
 	libgtkplayer-version.h \
 	libgtkplayer.h \
 	player.c \
+	resources.c \
 	$(NULL)
 
 liblibgtkplayer_@API_VERSION@_la_CFLAGS = \
@@ -26,6 +27,10 @@ gtkplayer_CFLAGS = $(GTKPLAYER_CFLAGS) $(LIBGTKPLAYER_CFLAGS) -g -O0
 gtkplayer_LDFLAGS = $(GTKPLAYER_LDFLAGS) $(LIBGTKPLAYER_LIBS) -g -O0
 gtkplayer_LDADD = $(GTKPLAYER_LIBS) liblibgtkplayer-@API_VERSION@.la
 
--include $(top_srcdir)/git.mk
+resources_file = $(srcdir)/resources/player.gresource.xml
+BUILT_SOURCES = resources.c
 
--include $(top_srcdir)/git.mk
+resources.c: $(resources_file) $(shell $(GLIB_COMPILE_RESOURCES) --generate-dependencies --sourcedir=$(srcdir)/resources $(resources_file) )
+	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir)/resources --generate-source $<
+
+#-include $(top_srcdir)/git.mk

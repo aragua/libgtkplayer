@@ -53,12 +53,12 @@ AX_CHECK_ENABLE_DEBUG([no],[]
 dnl ***********************************************************************
 dnl Internationalization
 dnl ***********************************************************************
-GETTEXT_PACKAGE=AC_PACKAGE_TARNAME
-AC_SUBST([GETTEXT_PACKAGE])
-AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"], [GETTEXT package name])
+dnl GETTEXT_PACKAGE=AC_PACKAGE_TARNAME
+dnl AC_SUBST([GETTEXT_PACKAGE])
+dnl AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"], [GETTEXT package name])
 
-AM_GNU_GETTEXT_VERSION([0.19.6])
-AM_GNU_GETTEXT([external])
+dnl AM_GNU_GETTEXT_VERSION([0.19.6])
+dnl AM_GNU_GETTEXT([external])
 
 
 dnl ***********************************************************************

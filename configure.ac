@@ -84,11 +84,9 @@ AX_COMPILER_FLAGS
 dnl ***********************************************************************
 dnl Ensure C11 is Supported
 dnl ***********************************************************************
-AX_CHECK_COMPILE_FLAG([-std=gnu11],
-                      [CFLAGS="$CFLAGS -std=gnu11"],
-                      [AC_MSG_ERROR([C compiler cannot compile GNU C11 code])])
-
-
+dnl AX_CHECK_COMPILE_FLAG([-std=gnu11],
+dnl                       [CFLAGS="$CFLAGS -std=gnu11"],
+dnl                       [AC_MSG_ERROR([C compiler cannot compile GNU C11 code])])
 
 dnl ***********************************************************************
 dnl Check for required packages
